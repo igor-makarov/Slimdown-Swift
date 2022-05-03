@@ -1,4 +1,4 @@
-// swift-tools-version:4.0
+// swift-tools-version:5.3
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -13,6 +13,13 @@ let package = Package(
         // .package(url: /* package url */, from: "1.0.0"),
     ],
     targets: [
-      .target(name: "Slimdown", dependencies: [], path: "Sources"),
-      .testTarget(name: "SlimdownTests", dependencies: ["Slimdown"], path: "Tests"),
+      .target(name: "Slimdown",
+              dependencies: [],
+              path: "Sources"),
+      .testTarget(name: "SlimdownTests",
+                  dependencies: ["Slimdown"],
+                  path: "Tests",
+                  resources: [
+                    .process("Fixtures"),
+                  ]),
    ])
