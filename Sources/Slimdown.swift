@@ -87,14 +87,10 @@ public func render(text: String) -> String {
             break
         }
     }
-    return trim(result)
+    return result.trim()
 }
 
-private func trim(_ string: String) -> String {
-    string.trimmingCharacters(in: .whitespacesAndNewlines)
-}
-
-extension String {
+private extension String {
     func replace(_ pattern: String, options: NSRegularExpression.Options = [], collector: ([String]) -> String) -> String {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: options) else { return self }
         let matches = regex.matches(in: self, options: NSRegularExpression.MatchingOptions(rawValue: 0), range: NSMakeRange(0, (self as NSString).length))
@@ -110,9 +106,10 @@ extension String {
             )
         }.reduce("") { "\($0)\($1.0)\(collector($1.1))" } + self[Range(matches.last!.range, in: self)!.upperBound ..< endIndex]
     }
-//    func replace(_ regexPattern: String, options: NSRegularExpression.Options = [], collector: @escaping () -> String) -> String {
-//        return replace(regexPattern, options: options) { (_: [String]) in collector() }
-//    }
+
+    func trim() -> String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }
 
 private func code_parse(_ matches: [String]) -> String {
@@ -128,12 +125,12 @@ private func code_parse(_ matches: [String]) -> String {
         let end = item.index(item.endIndex, offsetBy: -4, limitedBy: item.startIndex)!
         item = String(item[item.startIndex..<end])
     }
-    return "<pre><code>\(trim(item))</code></pre>"
+    return "<pre><code>\(item.trim())</code></pre>"
 }
 
 private func paragraph(_ matches: [String]) -> String {
     let line = matches[1]
-    let trimmed = trim(line)
+    let trimmed = line.trim()
     if trimmed.range(of: #"^<\/?(ul|ol|li|h|p|bl|table|tr|th|td|code)"#, options: .regularExpression) != nil {
         return "\n\(line)\n"
     }
@@ -145,21 +142,21 @@ private func paragraph(_ matches: [String]) -> String {
 
 private func ul_list(_ matches: [String]) -> String {
     let item = matches[1]
-    return "\n<ul>\n\t<li>\(trim(item))</li>\n</ul>"
+    return "\n<ul>\n\t<li>\(item.trim())</li>\n</ul>"
 }
 
 private func ol_list(_ matches: [String]) -> String {
     let item = matches[1]
-    return "\n<ol>\n\t<li>\(trim(item))</li>\n</ol>"
+    return "\n<ol>\n\t<li>\(item.trim())</li>\n</ol>"
 }
 
 private func blockquote(_ matches: [String]) -> String {
     let item = matches[2]
-    return "\n<blockquote>\(trim(item))</blockquote>"
+    return "\n<blockquote>\(item.trim())</blockquote>"
 }
 
 private func header(_ matches: [String]) -> String {
     let (chars, header) = (matches[1], matches[2])
     let level = chars.count
-    return "<h\(level)>\(trim(header))</h\(level)>"
+    return "<h\(level)>\(header.trim())</h\(level)>"
 }
