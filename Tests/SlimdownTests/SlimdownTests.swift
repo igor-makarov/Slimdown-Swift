@@ -4,7 +4,7 @@ import Slimdown
 
 class SlimdownTest: XCTestCase {
     struct Fixture {
-        var name: String { inputUrl.deletingPathExtension().lastPathComponent }
+        var name: String { inputUrl.basename }
         let inputUrl: URL
         let outputUrl: URL
     }
@@ -12,11 +12,13 @@ class SlimdownTest: XCTestCase {
     var fixture: Fixture!
 
     static let fixtures: [Fixture] = {
-        Bundle.module.urls(forResourcesWithExtension: "md", subdirectory: nil)!.map { inputUrl in
-            let name = inputUrl.deletingPathExtension().lastPathComponent
-            let outputUrl = Bundle.module.url(forResource: name, withExtension: "html")
-            return Fixture(inputUrl: inputUrl, outputUrl: outputUrl!)
-        }
+        Bundle.module.urls(forResourcesWithExtension: "md", subdirectory: nil)!
+            .sorted(by: { $0.basename < $1.basename })
+            .map { inputUrl in
+                let name = inputUrl.deletingPathExtension().lastPathComponent
+                let outputUrl = Bundle.module.url(forResource: name, withExtension: "html")
+                return Fixture(inputUrl: inputUrl, outputUrl: outputUrl!)
+            }
     }()
 
     override class var defaultTestSuite: XCTestSuite {
@@ -31,6 +33,7 @@ class SlimdownTest: XCTestCase {
     }
 
     @objc func verifyFixture() throws {
+        print(fixture.name)
         let md = try String(contentsOf: fixture.inputUrl)
         let expectedHtml = try String(contentsOf: fixture.outputUrl)
         let html = render(text: md)
@@ -39,4 +42,8 @@ class SlimdownTest: XCTestCase {
 
     static var allTests: [(String, (XCTestCase) -> Void)] = [
     ]
+}
+
+private extension URL {
+    var basename: String { deletingPathExtension().lastPathComponent }
 }
