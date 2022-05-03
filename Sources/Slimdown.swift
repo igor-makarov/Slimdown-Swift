@@ -117,12 +117,12 @@ private func code_parse(_ matches: [String]) -> String {
     //        item = htmlentities ($item, ENT_COMPAT)
     item = item.replacingOccurrences(of: "\n\n", with: "<br>")
     item = item.replacingOccurrences(of: "\n", with: "<br>")
-    while item.hasPrefix("<br>") {
-        let start = item.index(item.startIndex, offsetBy: 4, limitedBy: item.endIndex)!
+    while item.hasPrefix("<br>"),
+          let start = item.index(item.startIndex, offsetBy: 4, limitedBy: item.endIndex) {
         item = String(item[start..<item.endIndex])
     }
-    while item.hasSuffix("<br>") {
-        let end = item.index(item.endIndex, offsetBy: -4, limitedBy: item.startIndex)!
+    while item.hasSuffix("<br>"),
+          let end = item.index(item.endIndex, offsetBy: -4, limitedBy: item.startIndex) {
         item = String(item[item.startIndex..<end])
     }
     return "<pre><code>\(item.trim())</code></pre>"
