@@ -24,21 +24,34 @@ public enum Replacement {
     case function(ReplacementFunction)
 }
 
+public struct RegexDefinition {
+    let pattern: String
+    let options: NSRegularExpression.Options
+    init(pattern: String, options: NSRegularExpression.Options = []) {
+        self.pattern = pattern
+        self.options = options
+    }
+}
+
 public struct Rule {
-    let regex: String
+    let regex: RegexDefinition
     let replacement: Replacement
     init(regex: String, replacement: String) {
-        self.regex = regex
+        self.regex = .init(pattern: regex)
         self.replacement = .matchGroup(replacement)
     }
     init(regex: String, replacement: @escaping ReplacementFunction) {
-        self.regex = regex
+        self.regex = .init(pattern: regex)
         self.replacement = .function(replacement)
+    }
+    init(regex: String, multilineReplacement: @escaping ReplacementFunction) {
+        self.regex = .init(pattern: regex, options: .dotMatchesLineSeparators)
+        self.replacement = .function(multilineReplacement)
     }
 }
 
 private var rules = [
-//    Rule(regex: #"```(.*?)```/s"#, replacement: #"self::code_parse"#),                             // code blocks
+    Rule(regex: #"```(.*?)```"#, multilineReplacement: code_parse),                               // code blocks
     Rule(regex: #"\n(#+)(.*)"#, replacement: header),                                             // headers
     Rule(regex: #"\!\[([^\[]+)\]\(([^\)]+)\)"#, replacement: #"<img src=\'$2\' alt=\'$1\' />"#),  // images
     Rule(regex: #"\[([^\[]+)\]\(([^\)]+)\)"#, replacement: #"<a href=\'$2\'>$1</a>"#),            // links
@@ -68,9 +81,9 @@ public func render(text: String) -> String {
     for rule in rules {
         switch rule.replacement {
         case .matchGroup(let replacement):
-            result = result.replacingOccurrences(of: rule.regex, with: replacement, options: .regularExpression)
+            result = result.replacingOccurrences(of: rule.regex.pattern, with: replacement, options: .regularExpression)
         case .function(let replacementFunction):
-            result = result.replace(rule.regex, collector: replacementFunction)
+            result = result.replace(rule.regex.pattern, options: rule.regex.options, collector: replacementFunction)
             break
         }
     }
@@ -102,19 +115,21 @@ extension String {
 //    }
 }
 
-//    private static function code_parse ($regs) {
-//        $item = $regs[1];
-//        $item = htmlentities ($item, ENT_COMPAT);
-//        $item = str_replace ("\n\n", '<br>', $item);
-//        $item = str_replace ("\n", '<br>', $item);
-//        while (mb_substr ($item, 0, 4) === '<br>') {
-//            $item = mb_substr ($item, 4);
-//        }
-//        while (mb_substr ($item, -4) === '<br>') {
-//            $item = mb_substr ($item, 0, -4);
-//        }
-//        return sprintf ("<pre><code>%s</code></pre>", trim ($item));
-//    }
+private func code_parse(_ matches: [String]) -> String {
+    var item = matches[1]
+    //        item = htmlentities ($item, ENT_COMPAT)
+    item = item.replacingOccurrences(of: "\n\n", with: "<br>")
+    item = item.replacingOccurrences(of: "\n", with: "<br>")
+    while item.hasPrefix("<br>") {
+        let start = item.index(item.startIndex, offsetBy: 4, limitedBy: item.endIndex)!
+        item = String(item[start..<item.endIndex])
+    }
+    while item.hasSuffix("<br>") {
+        let end = item.index(item.endIndex, offsetBy: -4, limitedBy: item.startIndex)!
+        item = String(item[item.startIndex..<end])
+    }
+    return "<pre><code>\(trim(item))</code></pre>"
+}
 
 private func paragraph(_ matches: [String]) -> String {
     let line = matches[1]
